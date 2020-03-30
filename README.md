@@ -32,11 +32,11 @@ Both Genius and Spotify are large companies with expansive databases and service
 At this point, with all of the necessary data gathering components in place, we needed a way of ensuring that our data set was representative of the music industry as a whole. Beyond collecting as large a dataset as feasible, we needed to select our data points randomly. Fortunately, Genius uses integers between 0 and 4,000,000 to identify each of the songs in their database. Thus, to select a song, we generated a random Genius ID between 0 and 4,000,000. Using the Genius API, we then found the song and scraped its lyrics and genre. Finally, we used the Spotify search API to find the same song within the Spotify database, and then scrape the number of listens and hotness value. This entire scraping process was performed by a stand-alone python script run in the command line. The procedure is described in detail in the jupyter notebook found [here](Data%20Collection/Project%20Data%20Aquisition.ipynb), and scraping script found [here](Data%20Collection/scrapingscript.py). In total, we collected 118,000 unique song data points. The scraping was done over the course of about 2 weeks, on and off, at a rate of about 1200 songs per hour.
 
 ### Data Cleanup
-Once the complete dataframe of songs were obtained, in order to analyze the songs based on their lyrics, we needed to remove those that were either non-english or were simply instrumentals. Our model will be based off of english words, and including songs that either contain none nor have any actual lyrics will obviously affect the outcome. To check for english speaking songs, we used the package “langdetect” to check the lyrics within each song and got rid of those that were not english. This was done by using a for loop and using the lyrics column for each song to detect any different languages used. To check for instrumental songs, it is noted that on Spotify, any instrumental songs have their titles noted as, “Instrumental”. 
+Once all of the songs were collected, there were two processes required to properly finish the dataset. Firstly, we had to generate the language, instrumental and song length features. To generate the language labels, we used the package langdetect on the lyrics collected for each song. Depending on the task, langdetect has been found to function between 98% and 99% (Source), which we consider sufficient for our purposes. Songs were identified as instrumental if the lyrics contained less than 10 words, and the word instrumental, or if there were no lyrics at all. The accuracy of this process was found to be 100% over 200 hand labeled examples. Song length was simply measured as the number of words within the song lyrics for a given song.
 
-Similarly for checking a song’s language, we use a for loop and check the title within each song to see if it contains the word, “Instrumental”. Not only that, but we use a try block for each song to see if the lyrics feature any words or not, since a song may or may not contain any phrases or words whatsoever, which is what we want to avoid. After that, we used str.replace() to help remove any unwanted punctuation marks such as exclamation marks, question marks, periods, and other symbols. Since we're gonna analyze each word within our corpus list of words used within every song, we want words like, “love!” and “love?” to be the same word. 
+Using these new features, we can filter the dataset to restrict our analysis to English, non-instrumental songs. This is important, as we would like to restrict the domain on which we will be training both our embeddings and our regression models. If we allow a larger variety of words, the training will be far more computationally expensive.
 
-Finally, we needed to remove the words, “Genius” from our genres columns as the various types of music contained the word, “Genius”, which of course sounds really weird to say (R&B Genius doesn’t sound like a popular genre). Thus we once again used str.replace() to remove all the “Genius”’s from the column. Once we had all that done, we had finally cleaned all of the data. Our Data Cleanup script can be found [here](Data%20Cleanup/Data%20Cleaning.ipynb)
+Finally, we must reformat all of the data appropriately. Notably, we removed a variety of extraneous characters from the lyrics of each song. This is to remove distinctions between tokens such as “dont” and “don’t”. The lyrics were then stored as lists of lines. The exact structure and purpose of this process is discussed in more detail under the corpus heading in the analysis section. Our Data Cleanup script can be found [here](Data%20Cleanup/Data%20Cleaning.ipynb)
 
 ### Exploratory Analysis
 The dataset we collected contained a total of 120,000 of songs. Once those songs were restricted to only English and non-Instrumental tracks, we were left with a total of 85,000 to serve as training points. Our Exploratory Analysis script can be found [here](Data%20Cleanup/Exploratory%20Analysis.ipynb). The image below shows a sample view of some of the data set:
@@ -49,9 +49,9 @@ Each of the tracks contains 10 features: the title and artist, the Spotify popul
 #### Figure 2: Distribution of Listens
 ![](Figures/listens_histogram.png)
 
-As evident in the figure above, the data is shaped precisely as we assumed. Only a small number of songs had a large number of listens, and as can be expected, most songs are not popular. Only very few break away from the low thousands of listens. Also of interest, is form of the distribution; the distribution is unimodal with no identifiable groups. It would appear that all of these songs are subject to similar conditions of popularity, since we do not see modes higher in the distribution. (Features which may be present if certain songs were buoyed by advertising or other market forces.) Ideally, this also translates to low rates of confounding behaviour and factors in the data, increasing the end model accuracy.
+As evident in Figure 2, the data is shaped precisely as we assumed. Only a small number of songs had a large number of listens, and as can be expected, most songs are not popular. Only very few break away from the low thousands of listens. Also of interest, is the form of the distribution; the distribution is unimodal with no identifiable groups. It would appear that all of these songs are subject to similar conditions of popularity, since we do not see modes higher in the distribution which are features that might be present if certain songs were buoyed by advertising or other market forces. Ideally, this also translates to low rates of confounding behaviour and factors in the data, increasing the end model accuracy.
 
-We examined the hotness metric to see if it followed a similar trend (see Figure 3). While there is a similar pattern of skew in the hotness data, the spread of the distribution within the hotness is far greater than what we see among the listens. While the range is larger in the listens (our most simplistic measure of spread), the vast majority of data points lie squarely to the left axis.
+We examined the hotness metric to see if it followed a similar trend (see Figure 3). While there is a similar pattern of skew in the hotness data, the spread of the distribution within the hotness value is far greater than what we see among the listens. While the range is larger in the listens (our most simplistic measure of spread), the vast majority of data points lie squarely to the left axis.
 
 #### Figure 3: Distribution of Hotness
 ![](Figures/hotness_histogram.png)
@@ -64,18 +64,19 @@ This is concerning, since originally, we wanted to utilize hotness as a validati
 
 To explore this, we utilized a simple linear model to regress the hotness of a song, by the number of listens. Below is that regression plotted against those two features.
 
-#### Figure 4: Song Length
-![](Figures/song_length_histogram.png)
-
-The above is a distribution of song length of the English, non-instrumental dataset. Luckily the average song is 254 words long, and is far within our capabilities to train the RNNs against. Additionally, most songs fall very closely within this reasonable range. The longest song in the dataset, however, is a total of 9969 words long (not pictured in the visualization), which is definitely larger than we would like to tackle in the scope of this project. (At this point, we need to find a literature basis for the upper effective size for these models, and then filter our dataset accordingly.)
-
 #### Figure 5: Scatter Plot of Number of Hotness by Number of Listens
 ![](Figures/hotness_by_listens.png)
 
 And as we suspected, the model is absolutely terrible. Looking at the scatter plot, there seems to be very little relation between the metrics, and it is hard to imagine a model that would be successful given this data. The R^2 value for this model is an abysmally low .06.
+
 We were hoping that by correlating the number of listens with the hotness value, we could further validate its use as a popularity measure. Unfortunately, the lack of correlations negates this use of hotness as a source of validation for the popularity of a song. For lack of a more salient metric, however, we will continue forward with the number of listens as our final regression target, but must keep in mind that it is not necessarily indicative of the song’s popularity, as we did not manage to validate such a claim.
 
-Beyond viewing the various distribution statistics for each portion of our dataset, there are several key pieces of information we need to know about the dataset before performing the main analysis. The models which we will be using (Transformers, LSTMs, etc), are the most adept models currently in use for language tasks. They are able to remember key contextual information for far longer periods of time than any of their predecessors, thus expanding their ability to reference distant dependencies. However, the longer we extend their input, the longer and more difficult training such a network becomes. Thus the last numeric value within our dataset, but certainly not the least important, is song length.
+Beyond viewing the various distribution statistics for each portion of our dataset, there are several key pieces of information we need to know about the dataset before performing the main analysis. The models which we will be using (Transformers, LSTMs, etc), are the most adept models currently in use for language tasks. They are able to remember key contextual information for far longer periods of time than any of their predecessors, thus expanding their ability to reference distant dependencies. However, the longer we extend their input, the longer and more difficult training such a network becomes. Thus the last numeric value within our dataset, but certainly not the least important, is song length. 
+
+#### Figure 4: Song Length
+![](Figures/song_length_histogram.png)
+
+The above is a distribution of song length of the English, non-instrumental dataset. Luckily the average song is 254 words long, and is far within our capabilities to train the RNNs against. Additionally, most songs fall very closely within this reasonable range. The longest song in the dataset, however, is a total of 9969 words long (not pictured in the visualization), which is definitely larger than we would like to tackle in the scope of this project. (At this point, we need to find a literature basis for the upper effective size for these models, and then filter our dataset accordingly.)
 
 ## Analysis
 ### Corpus and Embeddings
@@ -116,10 +117,3 @@ Weekly Schedule:
 -April 9th: Training completed and models evaluated. Begin creating project video.
 <br>
 -April 19th (Entire Project): *Can identify the problematic areas of lyrics using models  
-
-
-
-
-
-
-
