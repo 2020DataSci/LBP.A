@@ -43,16 +43,19 @@ The dataset we collected contained a total of 120,000 of songs. Once those songs
 
 #### Figure 1: Sample View of Data Set
 ![](Figures/data_example.PNG)
+
 Each of the tracks contains 10 features: the title and artist, the Spotify popularity metrics (hotness and number of listens), the platform IDs, genres, and the language and instrumental tags. We first looked at the distribution of listens metric, as this will be our main label for the training stages of the project. We would like to verify some of our assumptions about the large skew in the Spotify plays, since many of our design decisions were chosen with that in mind.
 
 #### Figure 2: Distribution of Listens
 ![](Figures/listens_histogram.png)
+
 As evident in the figure above, the data is shaped precisely as we assumed. Only a small number of songs had a large number of listens, and as can be expected, most songs are not popular. Only very few break away from the low thousands of listens. Also of interest, is form of the distribution; the distribution is unimodal with no identifiable groups. It would appear that all of these songs are subject to similar conditions of popularity, since we do not see modes higher in the distribution. (Features which may be present if certain songs were buoyed by advertising or other market forces.) Ideally, this also translates to low rates of confounding behaviour and factors in the data, increasing the end model accuracy.
 
 We examined the hotness metric to see if it followed a similar trend (see Figure 3). While there is a similar pattern of skew in the hotness data, the spread of the distribution within the hotness is far greater than what we see among the listens. While the range is larger in the listens (our most simplistic measure of spread), the vast majority of data points lie squarely to the left axis.
 
 #### Figure 3: Distribution of Hotness
 ![](Figures/hotness_histogram.png)
+
 To demonstrate these differences, see the following table of normalized variances for listens and hotness. 
 (table here)
 Unsurprisingly, the variance is far higher in the hotness. However, what's striking is that it is greater by many orders of magnitude. While at first glance these distributions may look very similar, they are in fact quite different. We suspect this may be indicative of a lack of correlation between the two measures (see Figure 5).
@@ -63,10 +66,12 @@ To explore this, we utilized a simple linear model to regress the hotness of a s
 
 #### Figure 4: Song Length
 ![](Figures/song_length_histogram.png)
+
 The above is a distribution of song length of the English, non-instrumental dataset. Luckily the average song is 254 words long, and is far within our capabilities to train the RNNs against. Additionally, most songs fall very closely within this reasonable range. The longest song in the dataset, however, is a total of 9969 words long (not pictured in the visualization), which is definitely larger than we would like to tackle in the scope of this project. (At this point, we need to find a literature basis for the upper effective size for these models, and then filter our dataset accordingly.)
 
 #### Figure 5: Scatter Plot of Number of Hotness by Number of Listens
 ![](Figures/hotness_by_listens.png)
+
 And as we suspected, the model is absolutely terrible. Looking at the scatter plot, there seems to be very little relation between the metrics, and it is hard to imagine a model that would be successful given this data. The R^2 value for this model is an abysmally low .06.
 We were hoping that by correlating the number of listens with the hotness value, we could further validate its use as a popularity measure. Unfortunately, the lack of correlations negates this use of hotness as a source of validation for the popularity of a song. For lack of a more salient metric, however, we will continue forward with the number of listens as our final regression target, but must keep in mind that it is not necessarily indicative of the song’s popularity, as we did not manage to validate such a claim.
 
@@ -99,12 +104,19 @@ While we are not utilizing private or sensitive data outside of the public spher
 
 ### Project Progress
 As of the Project Milestone benchmark we have collected and cleaned the data, performed preliminary analysis on the song data and we are currently training the embeddings. Our next steps include choosing our pretrained model, this going to be a transformer and a RNN as stated in the intro of this paper. Below is a project schedule for the rest of the semester.
+
 Weekly Schedule: 
+<br>
 -March 27th: All data collected,  progress embeddings
+<br>
 -March 29th - April 2nd: Have clean and explored data, complete embeddings, model types chosen.
+<br>
 -April 2nd: Models created and training of the main model in progress.
+<br>
 -April 9th: Training completed and models evaluated. Begin creating project video.
--April 19th (Entire Project): *Can identify the problematic areas of lyrics using models
+<br>
+-April 19th (Entire Project): *Can identify the problematic areas of lyrics using models  
+
 
 
 
