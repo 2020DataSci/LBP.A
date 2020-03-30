@@ -57,7 +57,11 @@ We examined the hotness metric to see if it followed a similar trend (see Figure
 ![](Figures/hotness_histogram.png)
 
 To demonstrate these differences, see the following table of normalized variances for listens and hotness. 
-(table here)
+| Metric  | Normalized Variance |
+| ------------- | ------------- |
+| Listens  | 0.0004207 |
+| Hotness  | 0.0248828 |
+
 Unsurprisingly, the variance is far higher in the hotness. However, what's striking is that it is greater by many orders of magnitude. While at first glance these distributions may look very similar, they are in fact quite different. We suspect this may be indicative of a lack of correlation between the two measures (see Figure 5).
 
 This is concerning, since originally, we wanted to utilize hotness as a validating metric for the number of listens as a measure of popularity. A lack of correlation suggests that if one is a good measure of popularity, the other would not be.
