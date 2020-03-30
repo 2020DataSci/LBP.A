@@ -42,7 +42,7 @@ Finally, we needed to remove the words, “Genius” from our genres columns as 
 The dataset we collected contained a total of 120,000 of songs. Once those songs were restricted to only English and non-Instrumental tracks, we were left with a total of 85,000 to serve as training points. Our Exploratory Analysis script can be found [here](Data%20Cleanup/Exploratory%20Analysis.ipynb). The image below shows a sample view of some of the data set:
 
 #### Figure 1: Sample View of Data Set
-![](Figures/data%20example)
+![](Figures/data_example.PNG)
 Each of the tracks contains 10 features: the title and artist, the Spotify popularity metrics (hotness and number of listens), the platform IDs, genres, and the language and instrumental tags. We first looked at the distribution of listens metric, as this will be our main label for the training stages of the project. We would like to verify some of our assumptions about the large skew in the Spotify plays, since many of our design decisions were chosen with that in mind.
 
 #### Figure 2: Distribution of Listens
