@@ -22,7 +22,7 @@ GENIUS_MIN_ID = 1
 INDEX_FILE = r'data/index.csv'
 DATA_FILE = r'data/data.csv'
 
-RATE_LIMIT = .25
+RATE_LIMIT = .1
 
 SAVE_FREQUENCY = 100
 
@@ -69,97 +69,26 @@ def main():
     
     #GET SONGS
     while running:
+        #Exit if needed
         print(str(current_id_index) + ' searched and ' + str(songs_found) + ' found'+ ' - Press any key to exit', end='\r')
         if msvcrt.kbhit():
             running = False  
         
+        #Limit the rate
         time_took = time.time() - start_time
         if time_took < RATE_LIMIT:
             time.sleep(RATE_LIMIT - time_took)
         start_time = time.time()
         
+        #Move to the next song
         current_id_index += 1
         genius_id = id_list[current_id_index]
         
-        try:
-            genius_call = genius_session.get('songs/' + str(genius_id)).json()
-            url = 'https://genius.com' + genius_call['response']['song']['path'] 
-            title = remove_post_hyphen(remove_parenthesis(genius_call['response']['song']['title'].strip()))
-            artist = genius_call['response']['song']['primary_artist']['name'].strip()
-        except KeyError:
-            #We accessed an incorrect id
-            continue
-
-        spotify_id = None
-        #Search spotify by name and name + artist
-        for search in [title, title + ' ' + artist]:
-            query_params = {'q' : search,
-                        'type' : 'track'}
-            response = json.loads(spotify_session.get('v1/search', params=query_params).content)
-            try:
-                spotify_results = response['tracks']['items']
-            except KeyError:
-                try:
-                    print(response['error'])
-                    raise RuntimeError
-                except KeyError:
-                    continue
-            if spotify_results == []:
-                continue
-            for result in spotify_results:
-                if verify_song_identity(result, title, artist):
-                    spotify_id = result['uri'].split(':')[2]
-                    break
-                    
-        if spotify_id == None:
-            #We didn't manage to get a spotify link from the query or genius
-            continue
-        
-        spotify_call = spotify_session.get('/v1/tracks/' + spotify_id).json()
-        try:
-            hotness = spotify_call['popularity']
-            album_id = spotify_call['album']['uri'].split(':')[2]
-            title = spotify_call['name']
-        except KeyError:
-            print('Spotify call failed for the following track')
-            print('ID : ' + str(spotify_id) + ' , Name : ' + str(title) + ' , Artist : ' + str(artist))
-            raise KeyError
-               
-        song_page = requests.get(url)
-        html = BeautifulSoup(song_page.text,'html.parser')
-        lyrics = html.find('div', class_='lyrics').get_text()
-        genres = json.loads(html.find('meta', itemprop='page_data')['content'])['dmp_data_layer']['page']['genres']
-        
-        popularity_page = requests.get('https://t4ils.dev:4433/api/beta/albumPlayCount?albumid=' + album_id)
-        playcount = get_playcount(popularity_page, spotify_id)
-        
-        song = {
-            'title' : title,
-            'artist' : artist,
-            'lyrics' : lyrics,
-            'listens' : playcount,
-            'hotness' : hotness,
-            'genres' : genres,
-            'genius ID' : genius_id,
-            'spotify ID' : spotify_id
-        }
-    
-        #Reset for the next run
-        genius_call = None
-        spotify_call = None
-        popularity_page = None
-        song_page = None
-        title = None
-        artist = None
-        lyrics = None
-        playcount = None
-        hotness = None
-        genres = None
-        genius_id = None
-        spotify_id = None
-        
-        temp_data.append(song)
-        songs_found += 1
+        #Get a song using the get song method
+        song = get_song(genius_id, genius_session, spotify_session)
+        if not song == None:
+            temp_data.append(song)
+            songs_found += 1
         
         if(songs_found > SAVE_FREQUENCY):
             songs_found = 0
@@ -170,6 +99,99 @@ def main():
     print('Saving and Closing')
     save(temp_data, current_id_index, id_list)
 
+def get_song(genius_id, genius_session, spotify_session):
+    
+    try:
+        genius_call = genius_session.get('songs/' + str(genius_id)).json()
+        url = 'https://genius.com' + genius_call['response']['song']['path'] 
+        title = remove_post_hyphen(remove_parenthesis(genius_call['response']['song']['title'].strip()))
+        artist = genius_call['response']['song']['primary_artist']['name'].strip()
+    except KeyError:
+        #We accessed an incorrect id
+        return None
+
+    spotify_id = get_spotify_id_from_genius(genius_call)
+    
+    if spotify_id == None:
+        spotify_id = search_spotify_for_id(spotify_session, title, artist)
+        if spotify_id == None:
+            return None
+        else:
+            spotify_call = spotify_session.get('/v1/tracks/' + spotify_id).json()
+    else:
+        spotify_call = spotify_session.get('/v1/tracks/' + spotify_id).json()
+        
+        #Verify that the call was not an error, and if it was, try again
+        try:
+            spotify_call['error']
+            spotify_id = search_spotify_for_id(spotify_session, title, artist)
+            if spotify_id == None:
+                return None
+            else:
+                spotify_call = spotify_session.get('/v1/tracks/' + spotify_id).json()
+        except KeyError:
+            pass
+                
+    if spotify_id == None:
+        #We didn't manage to get a spotify link from the query or genius
+        return None
+
+    try:
+        hotness = spotify_call['popularity']
+        album_id = spotify_call['album']['uri'].split(':')[2]
+        title = spotify_call['name']
+    except KeyError:
+        print('Spotify call failed for the following track')
+        print('ID : ' + str(spotify_id) + ' , Name : ' + str(title) + ' , Artist : ' + str(artist))
+        raise KeyError
+           
+    song_page = requests.get(url)
+    html = BeautifulSoup(song_page.text,'html.parser')
+    lyrics = html.find('div', class_='lyrics').get_text()
+    genres = json.loads(html.find('meta', itemprop='page_data')['content'])['dmp_data_layer']['page']['genres']
+    
+    popularity_page = requests.get('https://t4ils.dev:4433/api/beta/albumPlayCount?albumid=' + album_id)
+    playcount = get_playcount(popularity_page, spotify_id)
+    
+    song = {
+        'title' : title,
+        'artist' : artist,
+        'lyrics' : lyrics,
+        'listens' : playcount,
+        'hotness' : hotness,
+        'genres' : genres,
+        'genius ID' : genius_id,
+        'spotify ID' : spotify_id
+    }
+    
+    return song
+
+def search_spotify_for_id(spotify_session, title, artist):
+    #Search spotify by name and name + artist
+    query_params = {'q' : title + ' ' + artist,
+                    'type' : 'track'}
+    response = json.loads(spotify_session.get('v1/search', params=query_params).content)
+    try:
+        spotify_results = response['tracks']['items']
+    #The result is not formated as we expected
+    except KeyError:
+        try:
+            #Test to see if the response is an error message, if it isn't this line will cause an error.
+            #In that case we can just move on, otherwise, we will raise an error to stop the program
+            print(response['error'])
+            raise RuntimeError
+        except KeyError:
+            #The result was poor, but not an error. Possibly a no result search.
+            return None
+        
+    #Check the results for the correct song
+    for result in spotify_results:
+        if result != None:
+            if verify_song_identity(result, title, artist):
+                return result['uri'].split(':')[2]
+    
+    return None
+    
 def get_spotify_token(spotify):
     authorization_id = 'Basic ' + str(base64.b64encode(bytes(spotify.client_id + ':' + spotify.client_secret,'utf-8')),'utf-8')
     header = {'Authorization' : authorization_id}

@@ -1,0 +1,4 @@
+The data listed under the folder 'bad data' was collected using an ammended method which sometimes generated faulty
+datapoints. Some of those datapoints pulled obscure versions of the song from Spotify, and thus have lower number
+of listens than they should. The mistake was infrequent, but affects the integrity of the data. We plan to recollect
+the faulty data if time permits.
