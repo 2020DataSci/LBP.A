@@ -23,8 +23,9 @@ INDEX_FILE = r'data/index.csv'
 DATA_FILE = r'data/data.csv'
 
 RATE_LIMIT = .1
-
 SAVE_FREQUENCY = 100
+
+TARGET_INDEX = 117533
 
 def main():
     #First, check for an indexing file
@@ -72,7 +73,10 @@ def main():
         #Exit if needed
         print(str(current_id_index) + ' searched and ' + str(songs_found) + ' found'+ ' - Press any key to exit', end='\r')
         if msvcrt.kbhit():
-            running = False  
+            running = False
+        if current_id_index >= TARGET_INDEX:
+            running = False
+            print('TARGET INDEX OF ' + str(TARGET_INDEX) + ' REACHED')
         
         #Limit the rate
         time_took = time.time() - start_time

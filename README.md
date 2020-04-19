@@ -36,7 +36,7 @@ Once all of the songs were collected, there were two processes required to prope
 
 Using these new features, we can filter the dataset to restrict our analysis to English, non-instrumental songs. This is important, as we would like to restrict the domain on which we will be training both our embeddings and our regression models. If we allow a larger variety of words, the training will be far more computationally expensive.
 
-Finally, we must reformat all of the data appropriately. Notably, we removed a variety of extraneous characters from the lyrics of each song. This is to remove distinctions between tokens such as “dont” and “don’t”. The lyrics were then stored as lists of lines. The exact structure and purpose of this process is discussed in more detail under the corpus heading in the analysis section. Our Data Cleanup script can be found [here](Data%20Cleanup/Data%20Cleaning.ipynb)
+Finally, we must reformat all of the data appropriately. Notably, we removed a variety of extraneous characters from the lyrics of each song. This is to remove distinctions between tokens such as “dont” and “don’t”, as well as problematic tokens such as emojis, or other unicode characters. The lyrics were then stored as lists of lines. The exact structure and purpose of this process is discussed in more detail under the corpus heading in the analysis section. Our Data Cleanup script can be found [here](Data%20Cleanup/Data%20Cleaning.ipynb)
 
 ### Exploratory Analysis
 The dataset we collected contained a total of 120,000 of songs. Once those songs were restricted to only English and non-Instrumental tracks, we were left with a total of 85,000 to serve as training points. Our Exploratory Analysis script can be found [here](Data%20Cleanup/Exploratory%20Analysis.ipynb). The image below shows a sample view of some of the data set:
@@ -88,14 +88,18 @@ While it is standard to use a pre trained embedding without modification in many
 
 There are many ways to generate an embedding, but for our embedding training, we will be using a process called “Continuous Bag of Words,” or CBOW. This method is used by the Word2Vec model, and has resulted in meaningful embeddings within the literature. This model predicts our target word by taking in pairs of context and target words.
 
-To generate the corpus, we will utilize the lyrics from each of the songs within our dataset. Each word must be paired with a unique numeric identifier, which will replace that word within the corpus. It is by using this list that we will select the context and targets for our CBOW model. For our embeddings, we selected a context window size of 3 words in either direction of the target word; this was an important consideration because more context does not necessarily mean more accurate results as words farther away become less related to the target. Our embedding script can be found [here](Embeddings/embedding%20(2).ipynb).
+To generate the corpus, we will utilize the lyrics from each of the songs within our dataset. Only words which appear more than once within the data will be selected to be a part of the vocabulary. This is necessary for the minimization of vocab size and garbage tokens not removed in the cleaning stage. (There were a significant amount of spelling errors in some songs, since the lyrics are user generated) Each word must be then paired with a unique numeric identifier, which will replace that word within the corpus. From there, we saved the corpus as a set of TfRecords files. The total size of this corpus dataset totaled to almost 24 million training examples. The notebook of corpus generation can be found here.
+
+Those TfRecords files were imported into the Embedding notebook here. From there, the model trained on the prediction task for a total of 2.5 epochs. After this point, we found that meaningful associations were arising. For example, weather was closest to sun, and then sea, respectively. Unfortunatlely, we also found that a small cluster of ~100 words had split from the rest of the data. The following figure shows a 3-dimensional PCA projection. We can see how large the effect of this dark spot is by the fact that within the PCA, the first dimension accounts for almost 40% of the variation within all 100 dimensions. While we found that more training of the model decreased the size of this spot, it was never fully eliminated. The solutions this this would be either more training, or a more strict frequency filter on the words which we include in our vocab. We found that the problematic embeddings were all words of frequency 2 or 3, so raising that bar would likely eliminate this issue.
 
 ### Training
-The primary model which we will utilize is a Transformer network. This network has excelled experimentally at natural language tasks, and trains quickly in parallel processing situations (read GPU). (We will need to decide whether we will be using multi-headed attention or not.) Additionally, we will train a simple recurrent neural network (RNN) and a long-short-term memory (LSTM) on the dataset; these will provide a baseline performance for the more complicated Transformer network. However, the size and parameters of the networks are yet to be determined. In addition to the recurrent models, we will perform the regression task using even simpler fully connected models. For those which cannot handle data of variable length, we will attempt padding or truncating the lyrical embeddings.
+#### RNN
+(Talk about training the RNN and its results)
 
-We expect that the main model we will be training for this regression task will be a Transformer structure with a fully connected regression head. The training on such a model will be the most time consuming portion of the project. We have chosen the U of U Center for High Performance Computing to undertake this task. Additionally, we will explore utilizing transfer learning from GPT-2 (OpenAI) or BERT (Google), since this would reduce the learning time for our model.
-Once the models have been trained on the data, we will cross-validate with a testing set of data to select the most performant model for our regression task. This will become the broad model. We will then refit the model to five selected genres, looking at the performance of these models as an indicator of how important lyrics are within that genre when compared to the general market.
-Finally, as an extension of the project, we aim to create the lyric analysis tool described previously. This tool will be able to utilize the general and genre specific models which we will train to identify which lyrics have the greatest negative impact on the final score given by the model. Further, if the genre of the lyrics is one of the five which we select, then a specific model for that genre will be used in place of the general model.
+#### Transformers
+Transformers are a fairly recent development in the feild of NLP, and have shown considerable performance increases, especially on long strings. Because of these considerations, transformers are a great fit for this problem.
+##### Simple Transformer
+We first created a simple transformer model. Since we do not have a large dataset and limited computing power, we utilized the pretrained distilBERT model.
 
 ## Limitations
 ### Validity
@@ -106,18 +110,5 @@ As with any model, it is hard to measure how well it will generalize outside of 
 
 ### Ethical Considerations
 While we are not utilizing private or sensitive data outside of the public sphere, there are still some ethical implications which arise from the application of such techniques to judge the quality of an individual’s effort, especially when the product is art. Such a tool which evaluates the ‘quality’ of lyrical work is not necessarily representative of a song’s artistic merit. If such a tool, geared to increase a raw and speculative metric like the number of Spotify listens, were to be used for measuring the worth of an Artist’s work or career, it might cause unjust devaluing of otherwise capable individuals. If those who manage such artists, such as Record Labels, feel that they should rely on these types of metrics and suggestions entirely, they may require conformity to those standards on the part of the musicians, hampering the diversity of music which they produce.
-
-### Project Progress
-As of the Project Milestone benchmark we have collected and cleaned the data, performed preliminary analysis on the song data and we are currently training the embeddings. Our next steps include choosing our pretrained model, this going to be a transformer and a RNN as stated in the intro of this paper. Below is a project schedule for the rest of the semester.
-
-Weekly Schedule: 
-<br>
--March 27th: All data collected,  progress embeddings
-<br>
--March 29th - April 2nd: Have clean and explored data, complete embeddings, model types chosen.
-<br>
--April 2nd: Models created and training of the main model in progress.
-<br>
--April 9th: Training completed and models evaluated. Begin creating project video.
-<br>
--April 19th (Entire Project): *Can identify the problematic areas of lyrics using models  
+### Further Work and Modifications
+Talk about why the models were not that successful and what we might do to change it
