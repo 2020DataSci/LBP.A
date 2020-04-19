@@ -94,7 +94,7 @@ Those TfRecords files were imported into the Embedding notebook here. From there
 
 ### Training
 #### RNN
-(Talk about training the RNN and its results)
+An RNN unlike other neural networks provides an efficent means of training on variable length inputs because our data is lines of song lyrics with variable length this model works best.
 
 #### Transformers
 Transformers are a fairly recent development in the feild of NLP, and have shown considerable performance increases, especially on long strings. Because of these considerations, transformers are a great fit for this problem.
@@ -110,5 +110,6 @@ As with any model, it is hard to measure how well it will generalize outside of 
 
 ### Ethical Considerations
 While we are not utilizing private or sensitive data outside of the public sphere, there are still some ethical implications which arise from the application of such techniques to judge the quality of an individual’s effort, especially when the product is art. Such a tool which evaluates the ‘quality’ of lyrical work is not necessarily representative of a song’s artistic merit. If such a tool, geared to increase a raw and speculative metric like the number of Spotify listens, were to be used for measuring the worth of an Artist’s work or career, it might cause unjust devaluing of otherwise capable individuals. If those who manage such artists, such as Record Labels, feel that they should rely on these types of metrics and suggestions entirely, they may require conformity to those standards on the part of the musicians, hampering the diversity of music which they produce.
+
 ### Further Work and Modifications
-Talk about why the models were not that successful and what we might do to change it
+Unfortunatley the models did not turn out as well as we had hoped. The RNN fell victum to vannishing gradient, this is the sad reality of gradient based learning methods. In order to fix this we might try adjusting our inputs and re training the model. The transformer ran into problems because it could only run one batch at a time. This slow training time was due to our PCs lack in computing power. 
