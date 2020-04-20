@@ -90,19 +90,33 @@ There are many ways to generate an embedding, but for our embedding training, we
 
 To generate the corpus, we will utilize the lyrics from each of the songs within our dataset. Only words which appear more than once within the data will be selected to be a part of the vocabulary. This is necessary for the minimization of vocab size and garbage tokens not removed in the cleaning stage. (There were a significant amount of spelling errors in some songs, since the lyrics are user generated) Each word must be then paired with a unique numeric identifier, which will replace that word within the corpus. From there, we saved the corpus as a set of TfRecords files. The total size of this corpus dataset totaled to almost 24 million training examples. The notebook of corpus generation can be found here. (ADD LINK)
 
-Those TfRecords files were imported into the Embedding notebook here. (ADD LINK) From there, the model trained on the prediction task for a total of 2.5 epochs. After this point, we found that meaningful associations were arising. For example, weather was closest to sun, and then sea, respectively. Unfortunatlely, we also found that a small cluster of ~100 words had split from the rest of the data. The following figure shows a 3-dimensional PCA projection. We can see how large the effect of this dark spot is by the fact that within the PCA, the first dimension accounts for almost 40% of the variation within all 100 dimensions. While we found that more training of the model decreased the size of this spot, it was never fully eliminated. The solutions this this would be either more training, or a more strict frequency filter on the words which we include in our vocab. We found that the problematic embeddings were all words of frequency 2 or 3, so raising that bar would likely eliminate this issue.
+Those TfRecords files were imported into the Embedding notebook here. (ADD LINK) From there, the model trained on the prediction task for a total of 2.5 epochs. After this point, we found that meaningful associations were arising. For example, weather was closest to sun, and then sea, respectively. Unfortunatlely, we also found that a small cluster of ~100 words had split from the rest of the data. The following figure shows a 3-dimensional PCA projection.
+
+![](Figures/embeddings.png)
+
+We can see how large the effect of this dark spot is by the fact that within the PCA, the first dimension accounts for almost 40% of the variation within all 100 dimensions. 
+
+![](Figures/variances.png)
+
+While we found that more training of the model decreased the size of this spot, it was never fully eliminated. The solutions this this would be either more training, or a more strict frequency filter on the words which we include in our vocab. We found that the problematic embeddings were all words of frequency 2 or 3, so raising that bar would likely eliminate this issue.
 
 ### Training
 #### RNN
 RNNs have been the go to method for modeling language tasks ever since their inception. Since they are one of the basic building blocks of most current high level techniques, it only makes sense for us to apply them to our data. We used a single layer bidirectional LSTM model, with our pretrained embeddings. This model was then headed by two fully connected dense layers.
+
 The RNN did not perform well on the data. Even after over 2000 epochs of training, we found that the error had decreased only marginally. Even worse, we found that the model had become input invariant. No matter the song, it predicted the a very similar value. One found to minimize the error on average.
+
 We beleive that there are several possible causes. Firstly, the input length on the RNN was quite long, and for long strings, it is common to find issues with vanishing gradients. If this happens, the model becomes unable to utilize a large portion of the information contained within the features it's given. Secondly, the model was learning on our custom embeddings, which were known to have issues of their own. Because of time constraints, we did not train the model with the embedding layer unlocked. This means that there may be information which is not properly encoded by the embeddings, thus unavailable for prediction.
 
 #### Transformers
 Transformers are a fairly recent development in the feild of NLP, and have shown considerable performance increases, especially on long strings. Because of these considerations, transformers are a great fit for this problem.
+
 We first created a simple transformer model. Since we do not have a large dataset and limited computing power, we utilized the pretrained distilBERT model. Thismodel is constructed from Google's BERT model (A current industry leader). It was found to maintain most of the performance of the BERT model, while being about half the size. Even so, our computers had difficulty loading large amounts of data while the model was also in memory.
+
 The transformer model showed much more promise than the RNN. From the very beginning its loss was lower than the final epochs of the RNN. We trained the model for one epoch, and acheived a loss which was 60% of the validation loss for the RNN. The model did still fall into the same problems as its predecessor. The predictions which the model gave showed far less variance than the actual dataset.
+
 Finally, we created another, segmented, transformer network. This model first encodes each line using distilBERT, and then passes those line embeddings into an RNN. Since the length in lines is far shorter than the length in words, this significantly reduces the problem of vanishing gradient.
+
 Since distilBERT is implemented using torch, there are compatability errors with certain keras implememntations, notably the RNN and LSTM layers. Instead, we pre-embeded the data, and then trained an RNN using the premade data. This means that the transformer layer cannot train, but we lacked the resources to do so anyway.
 (Talk about the performance)
 
