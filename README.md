@@ -95,11 +95,13 @@ To generate the corpus, we will utilize the lyrics from each of the songs within
 
 Those TfRecords files were imported into the Embedding notebook here. (ADD LINK) From there, the model trained on the prediction task for a total of 2.5 epochs. After this point, we found that meaningful associations were arising. For example, weather was closest to sun, and then sea, respectively. Unfortunatlely, we also found that a small cluster of ~100 words had split from the rest of the data. The following figure shows a 3-dimensional PCA projection.
 
-![](Figures/embeddings.png)
+#### Figure 5: 3-D Embeddings Projection
+![](Figures/embeddings.PNG)
 
 We can see how large the effect of this dark spot is by the fact that within the PCA, the first dimension accounts for almost 40% of the variation within all 100 dimensions. 
 
-![](Figures/variances.png)
+#### Figure 6: Projection Variance Explained by Dimension
+![](Figures/variances.PNG)
 
 While we found that more training of the model decreased the size of this spot, it was never fully eliminated. The solutions this this would be either more training, or a more strict frequency filter on the words which we include in our vocab. We found that the problematic embeddings were all words of frequency 2 or 3, so raising that bar would likely eliminate this issue.
 
