@@ -123,7 +123,7 @@ The transformer model showed much more promise than the RNN. From the very begin
 Finally, we created another, segmented, transformer network. This model first encodes each line using distilBERT, and then passes those line embeddings into an RNN. Since the length in lines is far shorter than the length in words, this significantly reduces the problem of vanishing gradient.
 
 Since distilBERT is implemented using torch, there are compatability errors with certain keras implememntations, notably the RNN and LSTM layers. Instead, we pre-embeded the data, and then trained an RNN using the premade data. This means that the transformer layer cannot train, but we lacked the resources to do so anyway.
-(Talk about the performance)
+The training of that model is currently underway.
 
 ## Limitations
 ### Validity
