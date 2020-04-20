@@ -8,6 +8,9 @@ Ethan Burrows: u1102916, ethandburrows@gmail.com
 Lass Omar: u1179231, u1179231@utah.edu
 <br>
 
+## Project Video
+![](Video/project_video.mp4)
+
 ## Introduction 
 Can AI beat the music industry? The music industry is heavily invested in decoding what makes a popular song, and the ability to predict popularity would be invaluable. But is it doable? What about a song makes it popular. Modern deep learning models may be able to answer that question.
 
