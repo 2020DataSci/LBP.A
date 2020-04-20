@@ -9,7 +9,7 @@ Lass Omar: u1179231, u1179231@utah.edu
 <br>
 
 ## Project Video
-[![Watch the video](https://img.youtube.com/vi/23HPKX0BToA/maxresdefault.jpg)](https://youtu.be/23HPKX0BToA)
+[![Watch the video](https://img.youtube.com/vi/23HPKX0BToA/hqdefault.jpg)](https://youtu.be/23HPKX0BToA)
 
 ## Introduction 
 Can AI beat the music industry? The music industry is heavily invested in decoding what makes a popular song, and the ability to predict popularity would be invaluable. But is it doable? What about a song makes it popular. Modern deep learning models may be able to answer that question.
